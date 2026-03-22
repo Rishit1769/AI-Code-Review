@@ -28,14 +28,14 @@ app.use(cors({
 }))
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'))
 
-// JSON parser FIRST — before routes and rate limiter
+// JSON parser FIRST
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Webhooks use their own raw() parser internally — mount after json parser
+// Webhooks BEFORE rate limiter — use their own raw() parser internally
 app.use('/api/webhook', webhookRouter)
 
-// Rate limiter — after webhooks so GitHub/LS never get 429
+// Rate limiter on all other API routes
 const apiLimiter = rateLimit({
   windowMs:        15 * 60 * 1000,
   max:             100,
@@ -58,10 +58,10 @@ async function bootstrap() {
   await testConnection()
   initPayments()
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`)
+    console.log(`🚀 Server running on http://localhost:${PORT}`)
   })
 }
 
-bootstrap().catch(err => { console.error('Startup failed:', err); process.exit(1) })
+bootstrap().catch(err => { console.error('❌ Startup failed:', err); process.exit(1) })
 
 export default app
